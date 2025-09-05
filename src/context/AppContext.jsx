@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext } from 'react'
+import useMemeFlowStore from '../store'
 
 const AppContext = createContext()
 
@@ -11,71 +12,27 @@ export const useApp = () => {
 }
 
 export const AppProvider = ({ children }) => {
-  const [user, setUser] = useState({
-    email: null,
-    subscriptionTier: 'free',
-    generationCredits: 3
-  })
-  
-  const [generatedMemes, setGeneratedMemes] = useState([])
-  const [isGenerating, setIsGenerating] = useState(false)
+  const store = useMemeFlowStore()
 
-  const generateMeme = async (prompt, template, style) => {
-    if (user.generationCredits <= 0 && user.subscriptionTier === 'free') {
-      return { error: 'No credits remaining' }
-    }
-
-    setIsGenerating(true)
-    
-    // Simulate API call to OpenAI
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    const newMeme = {
-      memeId: Date.now(),
-      prompt,
-      template,
-      style,
-      imageUrl: `https://picsum.photos/500/400?random=${Date.now()}`,
-      createdAt: new Date().toISOString()
-    }
-    
-    setGeneratedMemes(prev => [newMeme, ...prev])
-    
-    if (user.subscriptionTier === 'free') {
-      setUser(prev => ({
-        ...prev,
-        generationCredits: prev.generationCredits - 1
-      }))
-    }
-    
-    setIsGenerating(false)
-    return { success: true, meme: newMeme }
-  }
-
-  const upgradeToProUser = () => {
-    setUser(prev => ({
-      ...prev,
-      subscriptionTier: 'pro',
-      generationCredits: Infinity
-    }))
-  }
-
-  const buyCredits = (amount) => {
-    setUser(prev => ({
-      ...prev,
-      generationCredits: prev.generationCredits + amount
-    }))
+  // Create a compatibility layer for existing components
+  const contextValue = {
+    user: store.user,
+    generatedMemes: store.memes,
+    isGenerating: store.isGenerating,
+    generateMeme: store.generateMeme,
+    upgradeToProUser: store.upgradeUser,
+    buyCredits: store.purchaseCredits,
+    // Additional new features
+    templates: store.templates,
+    selectedTemplate: store.selectedTemplate,
+    selectTemplate: store.selectTemplate,
+    showUpgradeModal: store.showUpgradeModal,
+    showUpgrade: store.showUpgrade,
+    hideUpgrade: store.hideUpgrade
   }
 
   return (
-    <AppContext.Provider value={{
-      user,
-      generatedMemes,
-      isGenerating,
-      generateMeme,
-      upgradeToProUser,
-      buyCredits
-    }}>
+    <AppContext.Provider value={contextValue}>
       {children}
     </AppContext.Provider>
   )
